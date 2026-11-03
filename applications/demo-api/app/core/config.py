@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,7 +12,8 @@ class Settings(BaseSettings):
     )
 
     fault_simulation_enabled: bool = False
-    max_delay_seconds: int = 30
+    # Bounded so a misconfigured value can't hold connections open indefinitely
+    max_delay_seconds: int = Field(default=30, ge=0, le=300)
 
 
 @lru_cache

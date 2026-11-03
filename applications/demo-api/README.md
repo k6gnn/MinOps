@@ -55,14 +55,14 @@ docker run --rm -p 8000:8000 demo-api
 docker run --rm -p 8000:8000 -e DEMO_API_FAULT_SIMULATION_ENABLED=true demo-api
 ```
 
-The image runs as a non-root user and has a health check on `/healthz`; `docker ps` shows the container as `healthy` once it is up.
+The image runs as a non-root user that cannot modify the application code, and has a health check on `/healthz`; `docker ps` shows the container as `healthy` once it is up. Uvicorn runs a single worker (scale with replicas, since readiness state is per process), without its own access log (the app already logs every request as JSON) or `Server` header, and with a 20-second graceful shutdown.
 
 ## Environment variables
 
 | Variable | Default | Description |
 |---|---|---|
 | `DEMO_API_FAULT_SIMULATION_ENABLED` | `false` | Registers the `/demo/*` endpoints. Must be a boolean (`true`/`false`/`1`/`0`); any other value stops startup with a validation error. |
-| `DEMO_API_MAX_DELAY_SECONDS` | `30` | Upper bound for `delay` in timeout mode. Out-of-range values return 422. |
+| `DEMO_API_MAX_DELAY_SECONDS` | `30` | Upper bound for `delay` in timeout mode (must be 0–300, otherwise startup fails). Requests outside the bound return 422. |
 
 Never enable fault simulation in shared or production-like environments.
 

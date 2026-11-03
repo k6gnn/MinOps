@@ -33,3 +33,10 @@ def test_enabling_fault_simulation_logs_a_warning(log_lines):
 def test_disabled_fault_simulation_logs_no_warning(log_lines):
     create_app(Settings(_env_file=None))
     assert not any("Fault simulation" in line["message"] for line in log_lines())
+
+
+@pytest.mark.parametrize("value", ["-1", "301", "abc"])
+def test_invalid_max_delay_stops_startup(monkeypatch, value):
+    monkeypatch.setenv("DEMO_API_MAX_DELAY_SECONDS", value)
+    with pytest.raises(ValidationError, match="max_delay_seconds"):
+        create_app()

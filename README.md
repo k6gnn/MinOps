@@ -53,3 +53,9 @@ Dependabot (`.github/dependabot.yml`) opens weekly PRs for new package versions,
 ## Safety
 
 The demo API's fault-simulation endpoints (`/demo/*`) are disabled by default and must only be enabled in local or isolated test environments. Never commit `.env` files or secrets.
+
+To report a security problem, see [SECURITY.md](SECURITY.md). Please don't open a public issue.
+
+## License
+
+[MIT](LICENSE)

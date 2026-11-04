@@ -2,10 +2,22 @@
 APP_DIR := applications/demo-api
 IMAGE   := demo-api
 
-.PHONY: install test run run-faults docker-build docker-run
+PYTHON_IMAGE := python:3.11.18-slim@sha256:db20d8506e2f15b6db39b40b6015ca46bae855dec6dd326d462cfe79ae972893
+PIP_COMPILE  := pip-compile --quiet --generate-hashes --allow-unsafe --strip-extras
+
+.PHONY: install lock lock-dev test run run-faults docker-build docker-run
 
 install:
-	pip install -r requirements-dev.txt
+	pip install --require-hashes -r requirements-dev.txt
+
+# Regenerate the runtime lock inside the same Linux/Python image the Dockerfile uses
+lock:
+	docker run --rm -v "$(CURDIR)":/src -w /src $(PYTHON_IMAGE) \
+	  sh -c "pip install -q --root-user-action=ignore pip-tools && $(PIP_COMPILE) requirements.in -o requirements.txt"
+
+# Regenerate the dev lock for the local platform (needs pip-tools installed locally)
+lock-dev:
+	$(PIP_COMPILE) requirements-dev.in -o requirements-dev.txt
 
 test:
 	cd $(APP_DIR) && python -m pytest

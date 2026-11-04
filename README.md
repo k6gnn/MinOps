@@ -19,7 +19,8 @@ The full design, architecture and roadmap are in [MinOps_Technical_Project_Docum
 |---|---|
 | `applications/demo-api/` | FastAPI workload that MinOps monitors and deliberately disrupts ([README](applications/demo-api/README.md)) |
 | `Dockerfile` | Container image for the demo API (build from the repository root) |
-| `requirements.txt` / `requirements-dev.txt` | Pinned runtime and development dependencies |
+| `requirements.in` / `requirements-dev.in` | Top-level runtime and development dependencies (edit these) |
+| `requirements.txt` / `requirements-dev.txt` | Generated, fully pinned and hashed locks (never edit by hand; see [Dependencies](#dependencies)) |
 | `infrastructure/`, `monitoring/`, `ml/`, `services/`, `docs/` | Reserved for later phases |
 
 ## Quick start
@@ -34,6 +35,13 @@ uvicorn app.main:create_app --factory --reload
 ```
 
 With GNU Make available (Linux/macOS/CI), the same tasks are `make install`, `make test`, `make run`, `make run-faults`, `make docker-build` and `make docker-run`.
+
+## Dependencies
+
+Every dependency, including transitive ones, is pinned with SHA-256 hashes, and the image installs with `pip install --require-hashes`. To change dependencies, edit a `.in` file and regenerate its lock:
+
+- `make lock` regenerates `requirements.txt` inside the Dockerfile's Python image. The runtime lock must be generated on Linux/Python 3.11 because some packages (for example `uvloop`) are platform-specific.
+- `make lock-dev` regenerates `requirements-dev.txt` for your local platform with `pip-compile` from `pip-tools`.
 
 ## Safety
 

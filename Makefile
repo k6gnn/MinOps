@@ -10,10 +10,12 @@ PIP_COMPILE  := pip-compile --quiet --generate-hashes --allow-unsafe --strip-ext
 install:
 	pip install --require-hashes -r requirements-dev.txt
 
-# Regenerate the runtime lock inside the same Linux/Python image the Dockerfile uses
+# Regenerate the runtime and build-tool locks inside the same Linux/Python image the Dockerfile uses
 lock:
 	docker run --rm -v "$(CURDIR)":/src -w /src $(PYTHON_IMAGE) \
-	  sh -c "pip install -q --root-user-action=ignore pip-tools && $(PIP_COMPILE) requirements.in -o requirements.txt"
+	  sh -c "pip install -q --root-user-action=ignore pip-tools \
+	    && $(PIP_COMPILE) requirements.in -o requirements.txt \
+	    && $(PIP_COMPILE) requirements-build.in -o requirements-build.txt"
 
 # Regenerate the dev lock for the local platform (needs pip-tools installed locally)
 lock-dev:

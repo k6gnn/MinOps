@@ -8,8 +8,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
 # Dependencies go into a pip-free virtualenv so only the app's own packages are shipped;
-# the builder's pip is upgraded first so no vulnerable installer touches the downloads
-RUN python -m pip install --upgrade "pip>=26.1.2" \
+# the builder's pip is replaced first with a pinned, hash-checked release so no vulnerable
+# or unverified installer touches the downloads
+COPY requirements-build.txt .
+RUN python -m pip install --require-hashes --no-deps -r requirements-build.txt \
  && python -m venv --without-pip /opt/venv
 
 # requirements.txt is a fully pinned, hashed lock: pip rejects any package or file that doesn't match it

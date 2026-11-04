@@ -1,3 +1,7 @@
 .env
 .venv/
 __pycache__/
+
+# Claude Code local state (shared .claude/settings.json stays tracked)
+.claude/worktrees/
+.claude/settings.local.json

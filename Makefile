@@ -2,24 +2,22 @@
 APP_DIR := applications/demo-api
 IMAGE   := demo-api
 
-PYTHON_IMAGE := python:3.11.18-slim@sha256:db20d8506e2f15b6db39b40b6015ca46bae855dec6dd326d462cfe79ae972893
+PYTHON_IMAGE := python:3.11.18-alpine3.24@sha256:09d17d5e4c16d0a7a1eea690bcb7c6ab8616b211f8421e429e97c1bef5bd0ed2
 PIP_COMPILE  := pip-compile --quiet --generate-hashes --allow-unsafe --strip-extras
 
-.PHONY: install lock lock-dev test run run-faults docker-build docker-run
+.PHONY: install lock test run run-faults docker-build docker-run
 
 install:
 	pip install --require-hashes -r requirements-dev.txt
 
-# Regenerate the runtime and build-tool locks inside the same Linux/Python image the Dockerfile uses
+# Regenerate every lock inside the same Linux/Python image the Dockerfile uses, so runtime,
+# build and dev locks agree with each other, with CI and with WSL2 development
 lock:
 	docker run --rm -v "$(CURDIR)":/src -w /src $(PYTHON_IMAGE) \
 	  sh -c "pip install -q --root-user-action=ignore pip-tools \
 	    && $(PIP_COMPILE) requirements.in -o requirements.txt \
-	    && $(PIP_COMPILE) requirements-build.in -o requirements-build.txt"
-
-# Regenerate the dev lock for the local platform (needs pip-tools installed locally)
-lock-dev:
-	$(PIP_COMPILE) requirements-dev.in -o requirements-dev.txt
+	    && $(PIP_COMPILE) requirements-build.in -o requirements-build.txt \
+	    && $(PIP_COMPILE) requirements-dev.in -o requirements-dev.txt"
 
 test:
 	cd $(APP_DIR) && python -m pytest

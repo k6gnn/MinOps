@@ -10,8 +10,18 @@ updates:
       python-dependencies:
         patterns: ["*"]
 
-  # Base image digest in the Dockerfile, so Debian security fixes arrive as a PR
+  # Base image tag and digest in the Dockerfile, so Alpine and CPython security fixes arrive as a PR.
+  # Python minor upgrades (3.11 -> 3.12) are a deliberate change: re-lock, update .python-version, retest.
   - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+  # SHA-pinned actions in .github/workflows
+  - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"

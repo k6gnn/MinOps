@@ -1,4 +1,4 @@
-FROM python:3.11.18-slim@sha256:db20d8506e2f15b6db39b40b6015ca46bae855dec6dd326d462cfe79ae972893 AS builder
+FROM python:3.15.0-slim@sha256:f5b92f2a669a4c347044f29367f31983280b648250ca94dea66f98c53bc87e58 AS builder
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ RUN python -m pip install --require-hashes --no-deps -r requirements-build.txt \
 COPY requirements.txt .
 RUN pip --python /opt/venv/bin/python install --require-hashes --no-deps -r requirements.txt
 
-FROM python:3.11.18-slim@sha256:db20d8506e2f15b6db39b40b6015ca46bae855dec6dd326d462cfe79ae972893 AS runner
+FROM python:3.15.0-slim@sha256:f5b92f2a669a4c347044f29367f31983280b648250ca94dea66f98c53bc87e58 AS runner
 
 WORKDIR /app
 

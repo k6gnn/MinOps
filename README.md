@@ -25,24 +25,30 @@ The full design, architecture and roadmap are in [MinOps_Technical_Project_Docum
 
 ## Quick start
 
-```powershell
-cd applications/demo-api
+Development happens on Linux (on Windows, inside WSL2) with the Python version in `.python-version`, so the locks, the image and CI all use the same platform and interpreter. Clone the repository inside the WSL2 filesystem (for example `~/src/MinOps`), not under `/mnt/c`.
+
+```bash
+pyenv install --skip-existing   # reads .python-version
 python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r ../../requirements-dev.txt
-pytest
-uvicorn app.main:create_app --factory --reload
+source .venv/bin/activate
+make install
+make test
+make run
 ```
 
-With GNU Make available (Linux/macOS/CI), the same tasks are `make install`, `make test`, `make run`, `make run-faults`, `make docker-build` and `make docker-run`.
+The other tasks are `make run-faults`, `make docker-build`, `make docker-run` and `make lock`.
 
 ## Dependencies
 
-Every dependency, including transitive ones, is pinned with SHA-256 hashes, and the image installs with `pip install --require-hashes`. To change dependencies, edit a `.in` file and regenerate its lock:
+Every dependency, including transitive ones, is pinned with SHA-256 hashes and installed with `pip install --require-hashes`. To change dependencies, edit a `.in` file and run `make lock`, which regenerates `requirements.txt`, `requirements-build.txt` (the pip version used in the image's builder stage) and `requirements-dev.txt` inside the Dockerfile's Python image.
 
-- `make lock` regenerates `requirements.txt` and `requirements-build.txt` (the pip version used in the image's builder stage) inside the Dockerfile's Python image. The runtime lock must be generated on Linux/Python 3.11 because some packages (for example `uvloop`) are platform-specific.
-- `make lock-dev` regenerates `requirements-dev.txt` for your local platform with `pip-compile` from `pip-tools`.
-- Dependabot (`.github/dependabot.yml`) opens weekly PRs for new package versions and new base image digests, so pins stay current through review instead of floating.
+The image is based on `python:<version>-alpine`, pinned by tag and digest. Alpine has far fewer OS-level vulnerabilities than the Debian slim images, and every dependency ships a prebuilt musl wheel (the build uses `--only-binary=:all:`, so it never compiles from source).
+
+Dependabot (`.github/dependabot.yml`) opens weekly PRs for new package versions, base image patch releases and GitHub Actions, so pins stay current through review instead of floating. Python minor upgrades are excluded on purpose: change the Dockerfile, the Makefile's `PYTHON_IMAGE` and `.python-version` together, then run `make lock`.
+
+## CI
+
+`.github/workflows/ci.yml` runs on every PR and on pushes to `main`. It checks that the Python pins agree, runs the tests from the locked dev dependencies, builds the image, smoke-tests `/healthz`, and fails on any fixable HIGH or CRITICAL vulnerability, secret or misconfiguration found by Trivy.
 
 ## Safety
 

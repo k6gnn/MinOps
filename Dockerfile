@@ -1,4 +1,4 @@
-FROM python:3.11.18-slim@sha256:db20d8506e2f15b6db39b40b6015ca46bae855dec6dd326d462cfe79ae972893 AS builder
+FROM python:3.11.18-alpine3.24@sha256:09d17d5e4c16d0a7a1eea690bcb7c6ab8616b211f8421e429e97c1bef5bd0ed2 AS builder
 
 WORKDIR /app
 
@@ -16,9 +16,10 @@ RUN python -m pip install --require-hashes --no-deps -r requirements-build.txt \
 
 # requirements.txt is a fully pinned, hashed lock: pip rejects any package or file that doesn't match it
 COPY requirements.txt .
-RUN pip --python /opt/venv/bin/python install --require-hashes --no-deps -r requirements.txt
+# --only-binary keeps the build compiler-free: every package must ship a prebuilt musl wheel
+RUN pip --python /opt/venv/bin/python install --require-hashes --no-deps --only-binary=:all: -r requirements.txt
 
-FROM python:3.11.18-slim@sha256:db20d8506e2f15b6db39b40b6015ca46bae855dec6dd326d462cfe79ae972893 AS runner
+FROM python:3.11.18-alpine3.24@sha256:09d17d5e4c16d0a7a1eea690bcb7c6ab8616b211f8421e429e97c1bef5bd0ed2 AS runner
 
 WORKDIR /app
 
@@ -38,7 +39,7 @@ COPY --from=builder /opt/venv /opt/venv
 # Code stays root-owned so the non-root runtime user can read but not modify it
 COPY applications/demo-api/app ./app
 
-RUN adduser --disabled-password --gecos "" --no-create-home appuser
+RUN adduser -D -H -g "" appuser
 USER appuser
 
 EXPOSE 8000

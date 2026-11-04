@@ -18,26 +18,25 @@ A small FastAPI service that MinOps monitors and deliberately disrupts during te
 
 ## Run locally
 
-Commands run from `applications/demo-api` (PowerShell shown; on Linux/macOS activate with `source .venv/bin/activate`):
+Commands run from `applications/demo-api` on Linux (on Windows, inside WSL2), with the Python version from the repository's `.python-version`:
 
-```powershell
+```bash
 python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r ../../requirements-dev.txt
+source .venv/bin/activate
+pip install --require-hashes -r ../../requirements-dev.txt
 
 uvicorn app.main:create_app --factory --reload
 ```
 
 Open http://localhost:8000/docs. To enable the fault-simulation endpoints:
 
-```powershell
-$env:DEMO_API_FAULT_SIMULATION_ENABLED = "true"
-uvicorn app.main:create_app --factory --reload
+```bash
+DEMO_API_FAULT_SIMULATION_ENABLED=true uvicorn app.main:create_app --factory --reload
 ```
 
 ## Run the tests
 
-```powershell
+```bash
 pytest
 ```
 
@@ -45,7 +44,7 @@ pytest
 
 Build from the **repository root** (the build uses the root `requirements.txt`):
 
-```powershell
+```bash
 docker build -t demo-api .
 
 # Fault simulation off (default)
@@ -55,7 +54,7 @@ docker run --rm -p 8000:8000 demo-api
 docker run --rm -p 8000:8000 -e DEMO_API_FAULT_SIMULATION_ENABLED=true demo-api
 ```
 
-The image runs as a non-root user that cannot modify the application code, and has a health check on `/healthz`; `docker ps` shows the container as `healthy` once it is up. Uvicorn runs a single worker (scale with replicas, since readiness state is per process), without its own access log (the app already logs every request as JSON) or `Server` header, and with a 20-second graceful shutdown.
+The image is based on the official Python Alpine image (see the Dockerfile for the pinned tag) and runs as a non-root user that cannot modify the application code, and has a health check on `/healthz`; `docker ps` shows the container as `healthy` once it is up. Uvicorn runs a single worker (scale with replicas, since readiness state is per process), without its own access log (the app already logs every request as JSON) or `Server` header, and with a 20-second graceful shutdown.
 
 ## Environment variables
 

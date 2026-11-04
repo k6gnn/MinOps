@@ -1,0 +1,81 @@
+# Minimum gate for every PR (including Dependabot's): tests pass, the image builds,
+# and it has no fixable HIGH/CRITICAL vulnerabilities, secrets or misconfigurations
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      # Actions are pinned to full commit SHAs because tags can be moved; Dependabot bumps them
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Dependabot bumps the Dockerfile's base image only, so catch .python-version or the
+      # Makefile's lock image drifting away from it
+      - name: Check Python versions agree
+        run: |
+          images=$(grep -E '^FROM ' Dockerfile | awk '{print $2}' | sort -u)
+          [ "$(echo "$images" | wc -l)" -eq 1 ] || { echo "Dockerfile stages use different base images: $images"; exit 1; }
+          grep -qF "PYTHON_IMAGE := $images" Makefile || { echo "Makefile PYTHON_IMAGE does not match $images"; exit 1; }
+          image_version=$(echo "$images" | sed -E 's/^python:([0-9.]+)-.*/\1/')
+          [ "$image_version" = "$(cat .python-version)" ] || { echo ".python-version is $(cat .python-version), image is $image_version"; exit 1; }
+          echo "All Python pins agree: $images"
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install locked dependencies
+        run: pip install --require-hashes -r requirements-dev.txt
+
+      - name: Run tests
+        working-directory: applications/demo-api
+        run: python -m pytest
+
+  image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build image
+        run: docker build -t demo-api:ci .
+
+      - name: Smoke test health endpoint
+        run: |
+          docker run -d --name demo-api -p 8000:8000 demo-api:ci
+          for _ in $(seq 1 30); do
+            curl -fsS http://localhost:8000/healthz && exit 0
+            sleep 1
+          done
+          docker logs demo-api
+          exit 1
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.76.1
+          image-ref: demo-api:ci
+          scanners: vuln,secret,misconfig
+          image-config-scanners: misconfig,secret
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"

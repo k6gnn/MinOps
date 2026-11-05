@@ -66,8 +66,14 @@ jobs:
             curl -fsS http://localhost:8000/healthz && exit 0
             sleep 1
           done
-          docker logs demo-api
           exit 1
+
+      # Runs once the process is live: a fresh container must report ready straight away
+      - name: Smoke test readiness endpoint
+        run: |
+          body=$(curl -fsS http://localhost:8000/readyz)
+          echo "$body"
+          echo "$body" | grep -qF '"status":"ready"'
 
       - name: Scan image with Trivy
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
@@ -79,3 +85,7 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: "1"
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker logs demo-api || true

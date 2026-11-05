@@ -39,8 +39,11 @@ COPY --from=builder /opt/venv /opt/venv
 # Code stays root-owned so the non-root runtime user can read but not modify it
 COPY applications/demo-api/app ./app
 
-RUN adduser -D -H -g "" appuser
-USER appuser
+# Fixed numeric UID/GID: Kubernetes' runAsNonRoot can only verify a numeric USER, and the
+# pod's runAsUser/runAsGroup/fsGroup can match these exact IDs
+RUN addgroup -g 10001 appuser \
+ && adduser -D -H -g "" -u 10001 -G appuser appuser
+USER 10001:10001
 
 EXPOSE 8000
 

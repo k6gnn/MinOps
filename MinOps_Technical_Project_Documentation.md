@@ -3,8 +3,8 @@
 **Working title:** AI-Powered Intelligent Infrastructure Operations Platform  
 **Repository:** <https://github.com/k6gnn/MinOps>  
 **Documentation status:** Project design and implementation specification  
-**Last updated:** 3 November 2026  
-**Current implementation stage:** Phase 1 complete (demo API with fault-simulation switch, structured logging, automated tests and pinned dependencies). Phase 2 in progress: a hardened multi-stage Dockerfile exists; reproducible-build and container validation are still to be done
+**Last updated:** 5 November 2026  
+**Current implementation stage:** Phase 1 complete (demo API with fault-simulation switch, structured logging, automated tests and pinned dependencies). Phase 2 complete: a hardened multi-stage Dockerfile exists; CI now builds the image, smoke-tests /healthz and runs a Trivy scan.
 
 > **Status and accuracy note**  
 > This document describes the intended design, architecture, requirements, and implementation roadmap for MinOps. It is not a claim that the platform or its planned components already exist. Unless a section explicitly says otherwise, features described below are proposed or planned. The implementation should be updated incrementally, and this document should be revised whenever an architectural decision changes.

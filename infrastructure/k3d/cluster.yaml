@@ -1,0 +1,16 @@
+# infrastructure/k3d/cluster.yaml
+# Without this, editors match the filename to SchemaStore's unrelated RKE schema and flag every field
+# yaml-language-server: $schema=https://raw.githubusercontent.com/k3d-io/k3d/v5.9.0/pkg/config/v1alpha5/schema.json
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: minops
+servers: 1
+agents: 2
+# Pinned so a k3d upgrade can't silently change the Kubernetes version
+image: rancher/k3s:v1.35.5-k3s1
+options:
+  runtime:
+    # About 1.5 GB per node (3 x 1.5 GB = 4.5 GB), inside the 5 GB WSL2 budget
+    serversMemory: "1536M"
+    agentsMemory: "1536M"
